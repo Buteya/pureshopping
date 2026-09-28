@@ -1,0 +1,227 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:path/path.dart';
+import 'package:pureshopping/models/cartitem.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
+
+import '../models/product.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String userImage = '';
+  late Future<List<Product>> products;
+  int counter = 0;
+  String userID = '';
+  @override
+  void initState() {
+    super.initState();
+    _fetchImage();
+    products = fetchProducts();
+  }
+
+  Future<void> _fetchImage() async {
+    SharedPreferencesWithCache prefsWithCache =
+        await SharedPreferencesWithCache.create(
+          cacheOptions: SharedPreferencesWithCacheOptions(
+            allowList: <String>{'currentUserId', 'email', 'userImage'},
+          ),
+        );
+    setState(() {
+      userImage = prefsWithCache.getString('userImage')!;
+    });
+    print('current user image: $userImage');
+  }
+
+  Future<List<Product>> fetchProducts() async {
+    final database = await openDatabase(
+      join(await getDatabasesPath(), 'pureshopping.db'),
+      version: 1,
+    );
+    Product product = Product(
+      productID: '',
+      productName: '',
+      productImage: '',
+      price: 0.0,
+      quantity: 0,
+      productType: '',
+      dateOfManufacture: DateTime.now(),
+      expiryDate: DateTime.now(),
+      discountAllowed: 0,
+    );
+    print('all products: ${await product.products(database)}');
+    return product.products(database);
+  }
+
+  void addToCart(String userId, String productId, BuildContext context) async {
+    SharedPreferencesWithCache prefsWithCache =
+        await SharedPreferencesWithCache.create(
+          cacheOptions: const SharedPreferencesWithCacheOptions(
+            allowList: <String>{
+              'currentUserId',
+              'email',
+              'userImage',
+              'currentCartItems',
+            },
+          ),
+        );
+    userID = (prefsWithCache.getString('currentUserId'))!;
+    print('current user id: $userID');
+    final db = await openDatabase(
+      join(await getDatabasesPath(), 'pureshopping.db'),
+      version: 1,
+    );
+    final cartId = Uuid().v8();
+    final CartItem cartItem = CartItem(
+      id: cartId,
+      userId: userId,
+      productId: productId,
+    );
+
+    try {
+      cartItem.insertCartItem(cartItem);
+      final cartItems = await cartItem.cartItems();
+      setState(() {
+        counter = cartItems.length;
+      });
+      prefsWithCache.setString('currentCartItems', cartItems.length.toString());
+      print('current cart Items: $cartItems');
+      print('current cart items length ${cartItems.length}');
+      final products = await db.query('product');
+      final selectedProduct = products.firstWhere(
+        (product) => product['productID'] == productId,
+      );
+      print('selected product $selectedProduct');
+      print('selected product id: ${selectedProduct['productID']}');
+      print('selected product id: ${selectedProduct['productName']}');
+      if (cartItems.contains(cartItem)) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${selectedProduct['productName']} added successfully',
+              ),
+            ),
+          );
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('failed to add ${selectedProduct['name']}')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+
+    print('cartCounter is $counter');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Text('pureshopping'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              onPressed: () {},
+              icon: Icon(Icons.notifications),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Stack(
+              children: [
+                IconButton(onPressed: () {
+                  Navigator.pushNamed(context, '/ViewCartScreen');
+                }, icon: Icon(Icons.shopping_cart)),
+                counter > 0 ? Badge.count(count: counter) : SizedBox(),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 48.0),
+            child: userImage.isEmpty
+                ? CircleAvatar()
+                : CircleAvatar(backgroundImage: FileImage(File(userImage))),
+          ),
+        ],
+      ),
+      body: FutureBuilder(
+        future: products,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error ${snapshot.error}'));
+          }
+          if (snapshot.hasData) {
+            final items = snapshot.data;
+            return GridView.builder(
+              itemCount: items!.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                childAspectRatio: 4 / 3,
+                crossAxisCount: 2,
+                crossAxisSpacing: 8.0,
+                mainAxisSpacing: 8.0,
+              ),
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32.0,
+                    vertical: 8.0,
+                  ),
+                  child: Card(
+                    clipBehavior: Clip.hardEdge,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.file(
+                          File(items[index].productImage),
+                          height: 250,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                        Text(items[index].productType),
+                        Text(items[index].productName),
+                        Text(
+                          'KSH ${items[index].price.toString()}',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            addToCart(userID, items[index].productID, context);
+                          },
+                          label: Text('add to cart'),
+                          icon: Icon(Icons.add_shopping_cart),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          }
+          return Center(child: Text('no data found'));
+        },
+      ),
+    );
+  }
+}

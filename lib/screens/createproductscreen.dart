@@ -29,16 +29,8 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
   TextEditingController name = TextEditingController();
   Product? product;
   Database? database;
-  late String productID;
   final ImagePicker _imagePicker = ImagePicker();
   XFile? pickedImage;
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    productID = Uuid().v8();
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +61,8 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                 Navigator.pushNamed(context, '/ProductDashboardScreen');
               },
             ),
-          ],),
+          ],
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -298,7 +291,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                           );
 
                           product = Product(
-                            productID: productID,
+                            productID: Uuid().v8(),
                             productName: name.text,
                             productImage: pickedImage!.path,
                             price: double.parse(price.text),
@@ -319,31 +312,56 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                             },
                             version: 1,
                           );
-                          List<Map<String,Object?>> prod = await database!.query(
-                            'product',
-                            where: 'productID = ?',
-                            whereArgs: [product!.productID],
-                          );
-                          print(prod);
-                          print(product!.productID);
-                          print(prod.firstWhere((element)=>element['productID'] == product!.productID,orElse: ()=>{})['productID']);
-                          print(prod.firstWhere((element)=>element['productID'] == product!.productID,orElse: ()=>{})['productID'] != product!.productID);
-                          if (prod.firstWhere((element)=>element['productID'] == product!.productID,orElse: ()=>{})['productID'] != product!.productID) {
-                            product!.insertProduct(product!, database!);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Product with ${product!.productID} created successfully',
-                                  ),
-                                  duration: Duration(seconds: 3),
-                                ),
+                          // database!.execute('DROP TABLE product');
+                          // database!.execute('CREATE TABLE product(productID TEXT PRIMARY KEY, productName TEXT, productImage TEXT, price REAL, quantity INTEGER, productType TEXT, dateOfManufacture TEXT, expiryDate TEXT, discountAllowed INTEGER)');
+                          List<Map<String, Object?>> prod = await database!
+                              .query(
+                                'product',
+                                where: 'productID = ?',
+                                whereArgs: [product!.productID],
                               );
+                          print('product ${product!.productID}: $prod');
+                          print(
+                            'is there a product with this product id ${product!.productID}${prod.firstWhere((element) => element['productID'] == product!.productID, orElse: () => {})['productID'] != product!.productID}',
+                          );
+                          if (prod.firstWhere(
+                                (element) =>
+                                    element['productID'] == product!.productID,
+                                orElse: () => {},
+                              )['productID'] !=
+                              product!.productID) {
+                            try {
+                              product!.insertProduct(product!, database!);
+                              print(
+                                'product ${product!.productID} added successfully',
+                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Product with id ${product!.productID} created successfully',
+                                    ),
+                                    duration: Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                              if(context.mounted){
+                                Navigator.pushNamed(context, '/ProductDashboardScreen');
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(e.toString())),
+                                );
+                              }
                             }
                           } else {
-                            print(prod.firstWhere((element)=>element['productID'] == product!.productID,orElse: ()=>{})['productID'] == product!.productID);
-                            print(prod);
-                            print(prod.firstWhere((element)=>element['productID'] == product!.productID,orElse: ()=>{}));
+                            print(
+                              'is there a product with this product id ${product!.productID}${prod.firstWhere((element) => element['productID'] == product!.productID, orElse: () => {})['productID'] != product!.productID}',
+                            );
+                            print(
+                              'product with id ${product!.productID} : $prod',
+                            );
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
@@ -353,9 +371,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                               );
                             }
                           }
-
-                          //print(product.toString());
-                          //print(await product!.products(database!));
                           setState(() {
                             pickedImage = null;
                           });

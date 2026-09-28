@@ -71,7 +71,7 @@ class Product {
     );
     return [
       for (final {
-            "productID": prodcuctID,
+            "productID": productID as String,
             "productName": productName,
             "productImage": productImage,
             "price": price,

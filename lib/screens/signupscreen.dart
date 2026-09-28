@@ -24,6 +24,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final ImagePicker picker = ImagePicker();
   XFile? pickedImage;
   final userId = Uuid().v8();
+  bool isLoading = false;
 
   @override
   void dispose() {
@@ -38,7 +39,7 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
+      body:isLoading? Center(child: CircularProgressIndicator(),): SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32.0),
           child: Form(
@@ -212,19 +213,70 @@ class _SignupScreenState extends State<SignupScreen> {
                           password: password.text,
                           userImage: pickedImage!.path,
                         );
+                        try {
+                          setState(() {
+                            isLoading = true;
+                          });
+                          final users = await user.users();
+                          print('all users: ${await user.users()}');
+                          print(
+                            'user does not exist: ${users.firstWhere((user) => user.email == email.text).email != email.text}',
+                          );
+                          if (users
+                                  .firstWhere(
+                                    (user) => user.email == email.text,
+                                  )
+                                  .email !=
+                              email.text) {
+                            user.insertUser(user);
+                            print('user ${email.text} added successfully');
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'user ${email.text} added successfully',
+                                  ),
+                                ),
+                              );
+                              Navigator.pushNamed(context, '/LoginScreen');
+                            }
+                          } else {
+                            print('user ${email.text} already exist');
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'user ${email.text} already  exists',
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.toString())),
+                            );
+                          }
+                        }
 
-                        user.insertUser(user);
-                        print(await user.users());
+                        print('list of all users: ${await user.users()}');
                       }
+                      setState(() {
+                        isLoading = false;
+                      });
                     },
                     label: Text('signup'),
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(top: 16.0, bottom: 48),
-                  child: TextButton(onPressed: () {
-                    Navigator.pushNamed(context, '/LoginScreen');
-                  }, child: Text('login')),
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/LoginScreen');
+                    },
+                    child: Text('login'),
+                  ),
                 ),
               ],
             ),
