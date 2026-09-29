@@ -19,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String userImage = '';
   late Future<List<Product>> products;
+  late Future<List<CartItem>> cartItemsSuper;
   int counter = 0;
   String userID = '';
   @override
@@ -26,6 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _fetchImage();
     products = fetchProducts();
+    cartItemsSuper = fetchCartItems();
   }
 
   Future<void> _fetchImage() async {
@@ -91,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final cartItems = await cartItem.cartItems();
       setState(() {
         counter = cartItems.length;
+        cartItemsSuper = fetchCartItems();
       });
       prefsWithCache.setString('currentCartItems', cartItems.length.toString());
       print('current cart Items: $cartItems');
@@ -130,6 +133,11 @@ class _HomeScreenState extends State<HomeScreen> {
     print('cartCounter is $counter');
   }
 
+  Future<List<CartItem>> fetchCartItems()async{
+    CartItem cartItem = CartItem(id: '', userId: '', productId: '');
+    return await cartItem.cartItems();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -146,13 +154,31 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
-            child: Stack(
-              children: [
-                IconButton(onPressed: () {
-                  Navigator.pushNamed(context, '/ViewCartScreen');
-                }, icon: Icon(Icons.shopping_cart)),
-                counter > 0 ? Badge.count(count: counter) : SizedBox(),
-              ],
+            child: FutureBuilder(
+              future: cartItemsSuper,
+              builder: (context, asyncSnapshot) {
+                if(asyncSnapshot.connectionState == ConnectionState.waiting){
+                  return Center(child: CircularProgressIndicator(),);
+                }
+                if(asyncSnapshot.hasData){
+                  return Stack(
+                    children: [
+                      IconButton(onPressed: () {
+                        Navigator.pushNamed(context, '/ViewCartScreen');
+                      }, icon: Icon(Icons.shopping_cart)),
+                      asyncSnapshot.data!.isNotEmpty ? Badge.count(count: asyncSnapshot.data!.length) : SizedBox(),
+                    ],
+                  );
+                }
+                return Stack(
+                  children: [
+                    IconButton(onPressed: () {
+                      Navigator.pushNamed(context, '/ViewCartScreen');
+                    }, icon: Icon(Icons.shopping_cart)),
+
+                  ],
+                );
+              }
             ),
           ),
           Padding(
@@ -188,31 +214,37 @@ class _HomeScreenState extends State<HomeScreen> {
                     horizontal: 32.0,
                     vertical: 8.0,
                   ),
-                  child: Card(
-                    clipBehavior: Clip.hardEdge,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Image.file(
-                          File(items[index].productImage),
-                          height: 250,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
-                        Text(items[index].productType),
-                        Text(items[index].productName),
-                        Text(
-                          'KSH ${items[index].price.toString()}',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            addToCart(userID, items[index].productID, context);
-                          },
-                          label: Text('add to cart'),
-                          icon: Icon(Icons.add_shopping_cart),
-                        ),
-                      ],
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12.0),
+                    onTap: (){
+                      Navigator.pushNamed(context, '/ViewSingleProductScreen',arguments: items[index].productID);
+                    },
+                    child: Card(
+                      clipBehavior: Clip.hardEdge,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.file(
+                            File(items[index].productImage),
+                            height: 250,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                          Text(items[index].productType),
+                          Text(items[index].productName),
+                          Text(
+                            'KSH ${items[index].price.toString()}',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              addToCart(userID, items[index].productID, context);
+                            },
+                            label: Text('add to cart'),
+                            icon: Icon(Icons.add_shopping_cart),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );

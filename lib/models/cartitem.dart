@@ -26,12 +26,6 @@ class CartItem {
       join(await getDatabasesPath(), 'pureshopping.db'),
       version: 1,
     );
-    // final List<Map<String, Object?>> cartItems = await db.query('cartItem');
-    // if (cartItems.isEmpty) {
-    //   await db.execute(
-    //     'CREATE TABLE cartItem(id TEXT PRIMARY KEY, userId TEXT, productId TEXT)',
-    //   );
-    // }
     await db.insert(
       'cartItem',
       cartItem.toMap(),

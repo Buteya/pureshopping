@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:collection/collection.dart';
 
 import '../models/cartitem.dart';
 import '../models/product.dart';
@@ -15,19 +16,19 @@ class ViewCartScreen extends StatefulWidget {
 }
 
 class _ViewCartScreenState extends State<ViewCartScreen> {
-  late Future<List<CartItem>> cartItems;
-  late Future<List<Product>> products;
+  late Future<List<CartItem>> cartItemsSuper;
+  late Future<List<Product>> productsSuper;
 
   @override
   void initState() {
     super.initState();
-    cartItems = fetchCartItems();
-    products = fetchProducts();
+    cartItemsSuper = fetchCartItems();
+    productsSuper = fetchProducts();
   }
 
   Future<List<CartItem>> fetchCartItems() async {
     CartItem cartItem = CartItem(id: '', userId: '', productId: '');
-    return cartItem.cartItems();
+    return await cartItem.cartItems();
   }
 
   Future<List<Product>> fetchProducts() async {
@@ -46,18 +47,17 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
       expiryDate: DateTime.now(),
       discountAllowed: 0,
     );
-    print('all products: ${await product.products(database)}');
     return await product.products(database);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(leading:IconButton(onPressed: (){Navigator.pushNamed(context, '/HomeScreen');}, icon:Icon(Icons.arrow_back_rounded) ),automaticallyImplyLeading: false,),
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 24.0),
         child: FutureBuilder(
-          future: Future.wait([cartItems, products]),
+          future: Future.wait([cartItemsSuper, productsSuper]),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Center(child: CircularProgressIndicator());
@@ -66,19 +66,35 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
               return Center(child: Text('Error: ${snapshot.error}'));
             }
             if (snapshot.hasData) {
-              final List<CartItem> items = snapshot.data![0] as List<CartItem>;
-              print('snapshot data: ${snapshot.data![0]}');
-              print('all products: ${snapshot.data![1]}');
-              final List<Product> products = snapshot.data![1] as List<Product>;
-              print('list products $products');
+              print('snapshot cartItem: ${snapshot.data![0]}');
+              print('snapshot products: ${snapshot.data![1]}');
+              print('snapshot cartItem length: ${snapshot.data![0].length}');
+              List<CartItem> cartItems = snapshot.data![0] as List<CartItem>;
+              List<Product> products = snapshot.data![1] as List<Product>;
+              Map<String, List<CartItem>> groupedCartItems = groupBy(
+                cartItems,
+                (cartItem) => cartItem.productId,
+              );
+              print(
+                'cartItems grouped by productId ${groupedCartItems.keys}: $groupedCartItems',
+              );
+              print(
+                'cartItems grouped by productId length: ${groupedCartItems.length}',
+              );
               return ListView.builder(
-                itemCount: items.length,
+                itemCount: groupedCartItems.length,
                 itemBuilder: (context, index) {
-                  final product = products.firstWhere(
-                    (product) => product.productID == items[index].productId,
+                  Product product = products.firstWhere(
+                    (product) =>
+                        product.productID ==
+                        groupedCartItems.keys.toList()[index],
                   );
+                  print('current cart product $product');
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 48.0,vertical: 4.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 48.0,
+                      vertical: 4.0,
+                    ),
                     child: Card(
                       child: ListTile(
                         leading: Text((index + 1).toString()),
@@ -99,13 +115,70 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                             ),
                           ],
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextButton(onPressed: () {}, child: Text('-')),
-                            Text('1'),
-                            TextButton(onPressed: () {}, child: Text('+')),
-                          ],
+                        trailing: SizedBox(
+                          width: 100,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            physics: NeverScrollableScrollPhysics(),
+                            itemCount:
+                                groupedCartItems[groupedCartItems.keys
+                                        .toList()[index]]!
+                                    .length,
+                            itemBuilder: (context, innerIndex) {
+                              return Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  TextButton(
+                                    onPressed: () async {
+                                      print(
+                                        'snapshot cartItem: ${snapshot.data![0]}',
+                                      );
+                                      print(
+                                        'snapshot cartItem length: ${snapshot.data![0].length}',
+                                      );
+                                      print(
+                                        'item count same product id ${groupedCartItems[groupedCartItems.keys.toList()[index]]![innerIndex].productId}: ${groupedCartItems[groupedCartItems.keys.toList()[index]]!.length}',
+                                      );
+                                      try {
+                                        groupedCartItems[groupedCartItems.keys
+                                                .toList()[index]]![innerIndex]
+                                            .deleteCartItem(
+                                              groupedCartItems[groupedCartItems
+                                                  .keys
+                                                  .toList()[index]]![innerIndex],
+                                            );
+                                        setState(() {
+                                          cartItemsSuper = fetchCartItems();
+                                          productsSuper = fetchProducts();
+                                        });
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(e.toString()),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    },
+                                    child: Text('-'),
+                                  ),
+                                  Text(
+                                    groupedCartItems[groupedCartItems.keys
+                                            .toList()[index]]!
+                                        .length
+                                        .toString(),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {},
+                                    child: Text('+'),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),

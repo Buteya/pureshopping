@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
         '/ForgotPasswordScreen' : (context) => ForgotPasswordScreen(),
         '/HomeScreen' : (context) => HomeScreen(),
         '/ViewCartScreen' : (context) => ViewCartScreen(),
-        '/viewSingleProductScreen' : (context) => ViewSingleProductScreen(),
+        '/ViewSingleProductScreen' : (context) => ViewSingleProductScreen(),
       },
       title: 'pureshopping',
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
