@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:collection/collection.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/cartitem.dart';
 import '../models/product.dart';
@@ -53,7 +54,15 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(leading:IconButton(onPressed: (){Navigator.pushNamed(context, '/HomeScreen');}, icon:Icon(Icons.arrow_back_rounded) ),automaticallyImplyLeading: false,),
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pushNamed(context, '/HomeScreen');
+          },
+          icon: Icon(Icons.arrow_back_rounded),
+        ),
+        automaticallyImplyLeading: false,
+      ),
       body: Padding(
         padding: const EdgeInsets.symmetric(vertical: 24.0),
         child: FutureBuilder(
@@ -81,109 +90,407 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
               print(
                 'cartItems grouped by productId length: ${groupedCartItems.length}',
               );
-              return ListView.builder(
-                itemCount: groupedCartItems.length,
-                itemBuilder: (context, index) {
-                  Product product = products.firstWhere(
-                    (product) =>
-                        product.productID ==
-                        groupedCartItems.keys.toList()[index],
-                  );
-                  print('current cart product $product');
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 48.0,
-                      vertical: 4.0,
-                    ),
-                    child: Card(
-                      child: ListTile(
-                        leading: Text((index + 1).toString()),
-                        title: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Card(
-                              clipBehavior: Clip.hardEdge,
-                              child: Image.file(
-                                height: 50,
-                                width: 50,
-                                File(product.productImage),
+              return Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: groupedCartItems.length,
+                      itemBuilder: (context, index) {
+                        Product product = products.firstWhere(
+                          (product) =>
+                              product.productID ==
+                              groupedCartItems.keys.toList()[index],
+                        );
+                        print('current cart product $product');
+                        return Dismissible(
+                          key: Key(index.toString()),
+                          background: Container(
+                            color: Colors.red,
+                            alignment: Alignment.centerLeft,
+                            child: const Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                            ),
+                          ),
+                          confirmDismiss: (direction) async {
+                            return await showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: const Text('delete product'),
+                                  content: const Text(
+                                    'are you sure you want to delete this product?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop(false);
+                                      },
+                                      child: Text('cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pop(true);
+                                      },
+                                      child: Text('confirm'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                          onDismissed: (direction) async {
+                            try {
+                              final db = await openDatabase(
+                                join(
+                                  await getDatabasesPath(),
+                                  'pureshopping.db',
+                                ),
+                                version: 1,
+                              );
+                              final List<String> ids =
+                                  groupedCartItems[groupedCartItems.keys
+                                          .toList()[index]]!
+                                      .map((cartItem) => cartItem.id)
+                                      .toList();
+                              print('cart items to be deleted $ids');
+                              String placeholders = List.filled(
+                                ids.length,
+                                '?',
+                              ).join(',');
+                              await db.rawDelete(
+                                'DELETE FROM cartItem WHERE id IN ($placeholders)',
+                                ids,
+                              );
+                              print(
+                                'is cart item still available in cart? ${groupedCartItems.keys.toList().contains(ids[0])}',
+                              );
+                              if (!groupedCartItems.keys.toList().contains(
+                                ids[0],
+                              )) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      duration: Duration(seconds: 2),
+                                      content: Text(
+                                        'product deleted successfully',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              } else {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('failed to delete product'),
+                                    ),
+                                  );
+                                }
+                              }
+                              setState(() {
+                                cartItemsSuper = fetchCartItems();
+                              });
+                              print(
+                                'cartItems grouped by productId ${groupedCartItems.keys}: $groupedCartItems',
+                              );
+                              print(
+                                'cartItems grouped by productId length: ${groupedCartItems.length}',
+                              );
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(e.toString())),
+                                );
+                              }
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 48.0,
+                              vertical: 4.0,
+                            ),
+                            child: Card(
+                              child: ListTile(
+                                leading: Text((index + 1).toString()),
+                                title: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Card(
+                                      clipBehavior: Clip.hardEdge,
+                                      child: Image.file(
+                                        height: 50,
+                                        width: 50,
+                                        File(product.productImage),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 8.0),
+                                      child: Text(product.productName),
+                                    ),
+                                  ],
+                                ),
+                                trailing: SizedBox(
+                                  width: 150,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    physics: NeverScrollableScrollPhysics(),
+                                    itemCount:
+                                        groupedCartItems[groupedCartItems.keys
+                                                .toList()[index]]!
+                                            .length,
+                                    itemBuilder: (context, innerIndex) {
+                                      return Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          TextButton(
+                                            onPressed: () async {
+                                              print(
+                                                'snapshot cartItem: ${snapshot.data![0]}',
+                                              );
+                                              print(
+                                                'snapshot cartItem length: ${snapshot.data![0].length}',
+                                              );
+                                              print(
+                                                'item count same product id ${groupedCartItems[groupedCartItems.keys.toList()[index]]![innerIndex].productId}: ${groupedCartItems[groupedCartItems.keys.toList()[index]]!.length}',
+                                              );
+                                              try {
+                                                if (groupedCartItems[groupedCartItems
+                                                            .keys
+                                                            .toList()[index]]!
+                                                        .length >
+                                                    1) {
+                                                  groupedCartItems[groupedCartItems
+                                                          .keys
+                                                          .toList()[index]]![innerIndex]
+                                                      .deleteCartItem(
+                                                        groupedCartItems[groupedCartItems
+                                                            .keys
+                                                            .toList()[index]]![innerIndex],
+                                                      );
+                                                  print(
+                                                    'item with productId ${groupedCartItems[groupedCartItems.keys.toList()[index]]![innerIndex].productId} deleted successfully',
+                                                  );
+                                                  setState(() {
+                                                    cartItemsSuper =
+                                                        fetchCartItems();
+                                                    productsSuper =
+                                                        fetchProducts();
+                                                  });
+                                                } else {
+                                                  showDialog(
+                                                    context: context,
+                                                    builder: (context) {
+                                                      return AlertDialog(
+                                                        title: const Text(
+                                                          'delete product',
+                                                        ),
+                                                        content: const Text(
+                                                          'are you sure you want to delete this product?',
+                                                        ),
+                                                        actions: [
+                                                          TextButton(
+                                                            onPressed: () {
+                                                              Navigator.of(
+                                                                context,
+                                                              ).pop();
+                                                            },
+                                                            child: Text(
+                                                              'cancel',
+                                                            ),
+                                                          ),
+                                                          TextButton(
+                                                            onPressed: () {
+                                                              groupedCartItems[groupedCartItems
+                                                                      .keys
+                                                                      .toList()[index]]![innerIndex]
+                                                                  .deleteCartItem(
+                                                                    groupedCartItems[groupedCartItems
+                                                                        .keys
+                                                                        .toList()[index]]![innerIndex],
+                                                                  );
+                                                              print(
+                                                                'item with productId ${groupedCartItems[groupedCartItems.keys.toList()[index]]![innerIndex].productId} deleted successfully',
+                                                              );
+                                                              setState(() {
+                                                                cartItemsSuper =
+                                                                    fetchCartItems();
+                                                                productsSuper =
+                                                                    fetchProducts();
+                                                              });
+                                                              Navigator.of(
+                                                                context,
+                                                              ).pop();
+                                                            },
+                                                            child: Text(
+                                                              'confirm',
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      );
+                                                    },
+                                                  );
+                                                }
+                                              } catch (e) {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        e.toString(),
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              }
+                                            },
+                                            child: Text('-'),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(
+                                              groupedCartItems[groupedCartItems
+                                                      .keys
+                                                      .toList()[index]]!
+                                                  .length
+                                                  .toString(),
+                                            ),
+                                          ),
+                                          TextButton(
+                                            onPressed: () async {
+                                              print(
+                                                'snapshot cartItem: ${snapshot.data![0]}',
+                                              );
+                                              print(
+                                                'snapshot cartItem length: ${snapshot.data![0].length}',
+                                              );
+                                              print(
+                                                'item count same product id ${groupedCartItems[groupedCartItems.keys.toList()[index]]![innerIndex].productId}: ${groupedCartItems[groupedCartItems.keys.toList()[index]]!.length}',
+                                              );
+                                              try {
+                                                print(
+                                                  'item to add ${groupedCartItems[groupedCartItems.keys.toList()[index]]![innerIndex]}',
+                                                );
+                                                CartItem addCartItem = CartItem(
+                                                  id: Uuid().v8(),
+                                                  userId:
+                                                      groupedCartItems[groupedCartItems
+                                                              .keys
+                                                              .toList()[index]]![innerIndex]
+                                                          .userId,
+                                                  productId:
+                                                      groupedCartItems[groupedCartItems
+                                                              .keys
+                                                              .toList()[index]]![innerIndex]
+                                                          .productId,
+                                                );
+                                                await groupedCartItems[groupedCartItems
+                                                        .keys
+                                                        .toList()[index]]![innerIndex]
+                                                    .insertCartItem(
+                                                      addCartItem,
+                                                    );
+                                                print(
+                                                  'item with productId ${groupedCartItems[groupedCartItems.keys.toList()[index]]![innerIndex].productId} added successfully',
+                                                );
+                                                setState(() {
+                                                  cartItemsSuper =
+                                                      fetchCartItems();
+                                                  productsSuper =
+                                                      fetchProducts();
+                                                });
+                                              } catch (e) {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        e.toString(),
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              }
+                                            },
+                                            child: Text('+'),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                ),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Text(product.productName),
-                            ),
-                          ],
-                        ),
-                        trailing: SizedBox(
-                          width: 100,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            physics: NeverScrollableScrollPhysics(),
-                            itemCount:
-                                groupedCartItems[groupedCartItems.keys
-                                        .toList()[index]]!
-                                    .length,
-                            itemBuilder: (context, innerIndex) {
-                              return Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  TextButton(
-                                    onPressed: () async {
-                                      print(
-                                        'snapshot cartItem: ${snapshot.data![0]}',
-                                      );
-                                      print(
-                                        'snapshot cartItem length: ${snapshot.data![0].length}',
-                                      );
-                                      print(
-                                        'item count same product id ${groupedCartItems[groupedCartItems.keys.toList()[index]]![innerIndex].productId}: ${groupedCartItems[groupedCartItems.keys.toList()[index]]!.length}',
-                                      );
-                                      try {
-                                        groupedCartItems[groupedCartItems.keys
-                                                .toList()[index]]![innerIndex]
-                                            .deleteCartItem(
-                                              groupedCartItems[groupedCartItems
-                                                  .keys
-                                                  .toList()[index]]![innerIndex],
-                                            );
-                                        setState(() {
-                                          cartItemsSuper = fetchCartItems();
-                                          productsSuper = fetchProducts();
-                                        });
-                                      } catch (e) {
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(e.toString()),
-                                            ),
-                                          );
-                                        }
-                                      }
-                                    },
-                                    child: Text('-'),
-                                  ),
-                                  Text(
-                                    groupedCartItems[groupedCartItems.keys
-                                            .toList()[index]]!
-                                        .length
-                                        .toString(),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {},
-                                    child: Text('+'),
-                                  ),
-                                ],
-                              );
-                            },
                           ),
-                        ),
+                        );
+                      },
+                    ),
+                  ),
+                  Container(
+                    width: double.infinity,
+                    height: 120,
+                    color: Colors.black12,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 128.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical:8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  decoration: ShapeDecoration(
+                                    shadows:[BoxShadow(color: Colors.black12,blurRadius:10,offset: Offset(0, 4) )],
+                                    color: Colors.black12,
+                                    shape: StadiumBorder(side: BorderSide(color: Colors.grey.shade300)),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [Text('total items'), Text(cartItems.length.toString())],
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  decoration: ShapeDecoration(
+                                    shadows:[BoxShadow(color: Colors.black12,blurRadius:10,offset: Offset(0, 4) )],
+                                    color: Colors.black12,
+                                    shape: StadiumBorder(side: BorderSide(color: Colors.grey.shade300)),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [Text('price'), Text('${products.where((prod)=> cartItems.map((cart)=>cart.productId).contains(prod.productID)).toList().map((item)=>item.price)}')],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              ElevatedButton(
+                                onPressed: () {},
+                                child: Text('delete cart'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {},
+                                child: Text('checkout (${cartItems.length})'),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                  );
-                },
+                  ),
+                ],
               );
             }
             return Center(child: Text('no data found'));

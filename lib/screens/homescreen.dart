@@ -105,10 +105,13 @@ class _HomeScreenState extends State<HomeScreen> {
       print('selected product $selectedProduct');
       print('selected product id: ${selectedProduct['productID']}');
       print('selected product id: ${selectedProduct['productName']}');
-      if (cartItems.contains(cartItem)) {
+      var newlist = await db.query('cartItem');
+      print('new cart item added successfully ${newlist.firstWhere((item)=>item.containsValue(cartItem.id))['id'] == cartItem.id}');
+      if (newlist.firstWhere((item)=>item.containsValue(cartItem.id))['id'] == cartItem.id) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
+              duration: const Duration(seconds: 1),
               content: Text(
                 '${selectedProduct['productName']} added successfully',
               ),
