@@ -61,24 +61,28 @@ class _ViewSingleProductScreenState extends State<ViewSingleProductScreen> {
             final currentProduct = snapshot.data!.firstWhere(
               (product) => product.productID == routeArgumentProductId,
             );
-            return Card(
-              clipBehavior: Clip.hardEdge,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.file(
-                    fit: BoxFit.cover,
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Expanded(
+                  child: Image.file(
+                    fit: BoxFit.fitHeight,
                     width: double.infinity,
-                    height: 400,
                     File(currentProduct.productImage),
                   ),
-                  ElevatedButton.icon(
+                ),
+                Text(currentProduct.productName),
+                Text(currentProduct.productType),
+                Text('KSH ${currentProduct.price.toString()}'),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: ElevatedButton.icon(
                     onPressed: () {},
                     label: Text('add to cart'),
                     icon: Icon(Icons.add_shopping_cart),
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           }
           return Center(child: Text('no data found'));

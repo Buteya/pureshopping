@@ -146,7 +146,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text('pureshopping'),
+        title: Padding(
+          padding: const EdgeInsets.only(left:32.0),
+          child: Text('pureshopping'),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
@@ -227,11 +230,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Image.file(
-                            File(items[index].productImage),
-                            height: 250,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
+                          Expanded(
+                            child: Image.file(
+                              File(items[index].productImage),
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                           Text(items[index].productType),
                           Text(items[index].productName),
@@ -239,12 +243,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             'KSH ${items[index].price.toString()}',
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              addToCart(userID, items[index].productID, context);
-                            },
-                            label: Text('add to cart'),
-                            icon: Icon(Icons.add_shopping_cart),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16.0),
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                addToCart(userID, items[index].productID, context);
+                              },
+                              label: Text('add to cart'),
+                              icon: Icon(Icons.add_shopping_cart),
+                            ),
                           ),
                         ],
                       ),

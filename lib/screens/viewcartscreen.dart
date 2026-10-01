@@ -19,7 +19,6 @@ class ViewCartScreen extends StatefulWidget {
 class _ViewCartScreenState extends State<ViewCartScreen> {
   late Future<List<CartItem>> cartItemsSuper;
   late Future<List<Product>> productsSuper;
-
   @override
   void initState() {
     super.initState();
@@ -92,6 +91,14 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
               );
               return Column(
                 children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 48, right: 112.0),
+                    child: ListTile(
+                      leading: Text('no'),
+                      title: Text('item'),
+                      trailing: Text('quantity'),
+                    ),
+                  ),
                   Expanded(
                     child: ListView.builder(
                       itemCount: groupedCartItems.length,
@@ -117,9 +124,9 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                               context: context,
                               builder: (context) {
                                 return AlertDialog(
-                                  title: const Text('delete product'),
+                                  title: const Text('remove product'),
                                   content: const Text(
-                                    'are you sure you want to delete this product?',
+                                    'are you sure you want to remove this product?',
                                   ),
                                   actions: [
                                     TextButton(
@@ -227,6 +234,12 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                                       padding: const EdgeInsets.only(left: 8.0),
                                       child: Text(product.productName),
                                     ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                        left: 160.0,
+                                      ),
+                                      child: Text('KSH ${product.price}'),
+                                    ),
                                   ],
                                 ),
                                 trailing: SizedBox(
@@ -282,10 +295,10 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                                                     builder: (context) {
                                                       return AlertDialog(
                                                         title: const Text(
-                                                          'delete product',
+                                                          'remove product',
                                                         ),
                                                         content: const Text(
-                                                          'are you sure you want to delete this product?',
+                                                          'are you sure you want to remove this product?',
                                                         ),
                                                         actions: [
                                                           TextButton(
@@ -427,10 +440,9 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                       },
                     ),
                   ),
-                  Container(
+                  SizedBox(
                     width: double.infinity,
                     height: 120,
-                    color: Colors.black12,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 128.0),
                       child: Column(
@@ -438,35 +450,43 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.symmetric(vertical:8.0),
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Container(
-                                  decoration: ShapeDecoration(
-                                    shadows:[BoxShadow(color: Colors.black12,blurRadius:10,offset: Offset(0, 4) )],
-                                    color: Colors.black12,
-                                    shape: StadiumBorder(side: BorderSide(color: Colors.grey.shade300)),
-                                  ),
+                                Material(
+                                  shape: StadiumBorder(),
+                                  elevation: 2.0,
                                   child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12.0,
+                                      horizontal: 16.0,
+                                    ),
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      children: [Text('total items'), Text(cartItems.length.toString())],
+                                      children: [
+                                        Text('total items'),
+                                        Text(cartItems.length.toString()),
+                                      ],
                                     ),
                                   ),
                                 ),
-                                Container(
-                                  decoration: ShapeDecoration(
-                                    shadows:[BoxShadow(color: Colors.black12,blurRadius:10,offset: Offset(0, 4) )],
-                                    color: Colors.black12,
-                                    shape: StadiumBorder(side: BorderSide(color: Colors.grey.shade300)),
-                                  ),
+                                Material(
+                                  shape: StadiumBorder(),
+                                  elevation: 4.0,
                                   child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12.0,
+                                      horizontal: 16.0,
+                                    ),
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      children: [Text('price'), Text('${products.where((prod)=> cartItems.map((cart)=>cart.productId).contains(prod.productID)).toList().map((item)=>item.price)}')],
+                                      children: [
+                                        Text('price'),
+                                        Text(
+                                          'KSH ${List.generate((products.where((prod) => cartItems.map((cart) => cart.productId).contains(prod.productID)).toList().map((item) => item.price).toList()).length, (i) => (products.where((prod) => cartItems.map((cart) => cart.productId).contains(prod.productID)).toList().map((item) => item.price).toList())[i] * groupedCartItems.values.map((list) => list.length).toList()[i]).fold(0.00, (initialValue, sum) => initialValue + sum)}',
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -474,15 +494,83 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                             ),
                           ),
                           Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
                               ElevatedButton(
-                                onPressed: () {},
+                                onPressed: () async {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        title: const Text('remove cart'),
+                                        content: const Text(
+                                          'are you sure you want to remove all the products?',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                            child: Text('cancel'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () async {
+                                              try {
+                                                final db = await openDatabase(
+                                                  join(
+                                                    await getDatabasesPath(),
+                                                    'pureshopping.db',
+                                                  ),
+                                                  version: 1,
+                                                );
+                                                await db.delete('cartItem');
+                                                setState(() {
+                                                  cartItemsSuper =
+                                                      fetchCartItems();
+                                                });
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      duration: Duration(
+                                                        seconds: 1,
+                                                      ),
+                                                      content: Text(
+                                                        'all products have been removed',
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                                if (context.mounted) {
+                                                  Navigator.of(context).pop();
+                                                }
+                                              } catch (e) {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        e.toString(),
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              }
+                                            },
+                                            child: Text('confirm'),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
                                 child: Text('delete cart'),
                               ),
                               ElevatedButton(
                                 onPressed: () {},
-                                child: Text('checkout (${cartItems.length})'),
+                                child: Text('checkout ${cartItems.length}'),
                               ),
                             ],
                           ),
