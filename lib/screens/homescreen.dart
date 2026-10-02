@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -18,15 +19,16 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String userImage = '';
-  late Future<List<Product>> products;
+  late Future<List<Product>> productsSuper;
   late Future<List<CartItem>> cartItemsSuper;
   int counter = 0;
   String userID = '';
+  final SearchController searchController = SearchController();
   @override
   void initState() {
     super.initState();
     _fetchImage();
-    products = fetchProducts();
+    productsSuper = fetchProducts();
     cartItemsSuper = fetchCartItems();
   }
 
@@ -106,8 +108,11 @@ class _HomeScreenState extends State<HomeScreen> {
       print('selected product id: ${selectedProduct['productID']}');
       print('selected product id: ${selectedProduct['productName']}');
       var newlist = await db.query('cartItem');
-      print('new cart item added successfully ${newlist.firstWhere((item)=>item.containsValue(cartItem.id))['id'] == cartItem.id}');
-      if (newlist.firstWhere((item)=>item.containsValue(cartItem.id))['id'] == cartItem.id) {
+      print(
+        'new cart item added successfully ${newlist.firstWhere((item) => item.containsValue(cartItem.id))['id'] == cartItem.id}',
+      );
+      if (newlist.firstWhere((item) => item.containsValue(cartItem.id))['id'] ==
+          cartItem.id) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -136,9 +141,15 @@ class _HomeScreenState extends State<HomeScreen> {
     print('cartCounter is $counter');
   }
 
-  Future<List<CartItem>> fetchCartItems()async{
+  Future<List<CartItem>> fetchCartItems() async {
     CartItem cartItem = CartItem(id: '', userId: '', productId: '');
     return await cartItem.cartItems();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -147,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Padding(
-          padding: const EdgeInsets.only(left:32.0),
+          padding: const EdgeInsets.only(left: 32.0),
           child: Text('pureshopping'),
         ),
         actions: [
@@ -163,28 +174,35 @@ class _HomeScreenState extends State<HomeScreen> {
             child: FutureBuilder(
               future: cartItemsSuper,
               builder: (context, asyncSnapshot) {
-                if(asyncSnapshot.connectionState == ConnectionState.waiting){
-                  return Center(child: CircularProgressIndicator(),);
+                if (asyncSnapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
                 }
-                if(asyncSnapshot.hasData){
+                if (asyncSnapshot.hasData) {
                   return Stack(
                     children: [
-                      IconButton(onPressed: () {
-                        Navigator.pushNamed(context, '/ViewCartScreen');
-                      }, icon: Icon(Icons.shopping_cart)),
-                      asyncSnapshot.data!.isNotEmpty ? Badge.count(count: asyncSnapshot.data!.length) : SizedBox(),
+                      IconButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/ViewCartScreen');
+                        },
+                        icon: Icon(Icons.shopping_cart),
+                      ),
+                      asyncSnapshot.data!.isNotEmpty
+                          ? Badge.count(count: asyncSnapshot.data!.length)
+                          : SizedBox(),
                     ],
                   );
                 }
                 return Stack(
                   children: [
-                    IconButton(onPressed: () {
-                      Navigator.pushNamed(context, '/ViewCartScreen');
-                    }, icon: Icon(Icons.shopping_cart)),
-
+                    IconButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/ViewCartScreen');
+                      },
+                      icon: Icon(Icons.shopping_cart),
+                    ),
                   ],
                 );
-              }
+              },
             ),
           ),
           Padding(
@@ -196,7 +214,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: FutureBuilder(
-        future: products,
+        future: productsSuper,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -206,59 +224,146 @@ class _HomeScreenState extends State<HomeScreen> {
           }
           if (snapshot.hasData) {
             final items = snapshot.data;
-            return GridView.builder(
-              itemCount: items!.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                childAspectRatio: 4 / 3,
-                crossAxisCount: 2,
-                crossAxisSpacing: 8.0,
-                mainAxisSpacing: 8.0,
-              ),
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32.0,
-                    vertical: 8.0,
-                  ),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12.0),
-                    onTap: (){
-                      Navigator.pushNamed(context, '/ViewSingleProductScreen',arguments: items[index].productID);
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: SearchAnchor(
+                    searchController: searchController,
+                    viewOnChanged: (text) {
+                      if (text.isEmpty) {
+                        setState(() {
+                          productsSuper = fetchProducts();
+                        });
+                      }
                     },
-                    child: Card(
-                      clipBehavior: Clip.hardEdge,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Expanded(
-                            child: Image.file(
-                              File(items[index].productImage),
-                              width: double.infinity,
-                              fit: BoxFit.cover,
+                    viewTrailing: [IconButton(onPressed: (){
+                      setState(() {
+                        productsSuper =fetchProducts();
+                      });
+                      searchController.clear();
+                    }, icon: Icon(Icons.clear))],
+                    builder: (context, controller) {
+                      return SearchBar(
+                        controller: controller,
+                        padding: WidgetStatePropertyAll<EdgeInsets>(
+                          EdgeInsets.symmetric(horizontal: 16.0),
+                        ),
+                        onTap: () {
+                          controller.openView();
+                        },
+                        onChanged: (text) {
+                          controller.openView();
+                        },
+                        leading: const Icon(Icons.search),
+                        hintText: 'search products...',
+                      );
+                    },
+                    suggestionsBuilder: (context, controller) {
+                      final String keyword = controller.text.toLowerCase();
+                      final List<Product> filteredList = snapshot.data!
+                          .where(
+                            (data) => data.productName.toLowerCase().contains(
+                              keyword,
                             ),
-                          ),
-                          Text(items[index].productType),
-                          Text(items[index].productName),
-                          Text(
-                            'KSH ${items[index].price.toString()}',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 16.0),
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                addToCart(userID, items[index].productID, context);
-                              },
-                              label: Text('add to cart'),
-                              icon: Icon(Icons.add_shopping_cart),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                          )
+                          .toList();
+                      if(keyword.isEmpty){
+                        return filteredList.map((product) {
+                          return ListTile(
+                            title: Text(product.productName),
+                            onTap: () async{
+                              setState(() {
+                                productsSuper = Future.value(
+                                    [product]
+                                );
+                              });
+                              controller.closeView(product.productName);
+                            },
+                          );
+                        }).toList();
+                      }
+                      return filteredList.map((product) {
+                        return ListTile(
+                          title: Text(product.productName),
+                          onTap: () async{
+                            setState(() {
+                              productsSuper = Future.value(
+                               [product]
+                              );
+                            });
+                            controller.closeView(product.productName);
+                          },
+                        );
+                      }).toList();
+                    },
                   ),
-                );
-              },
+                ),
+                Expanded(
+                  child: GridView.builder(
+                    itemCount: items!.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      childAspectRatio: 4 / 3,
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 8.0,
+                      mainAxisSpacing: 8.0,
+                    ),
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32.0,
+                          vertical: 8.0,
+                        ),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12.0),
+                          onTap: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/ViewSingleProductScreen',
+                              arguments: items[index].productID,
+                            );
+                          },
+                          child: Card(
+                            clipBehavior: Clip.hardEdge,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Expanded(
+                                  child: Image.file(
+                                    File(items[index].productImage),
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                Text(items[index].productType),
+                                Text(items[index].productName),
+                                Text(
+                                  'KSH ${items[index].price.toString()}',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 16.0),
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      addToCart(
+                                        userID,
+                                        items[index].productID,
+                                        context,
+                                      );
+                                    },
+                                    label: Text('add to cart'),
+                                    icon: Icon(Icons.add_shopping_cart),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             );
           }
           return Center(child: Text('no data found'));
