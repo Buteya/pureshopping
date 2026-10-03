@@ -15,18 +15,21 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController email = TextEditingController();
   final TextEditingController password = TextEditingController();
   bool isTextObscure = true;
-  bool isLoading = false;
 
   void login(String email, String password, BuildContext context) async {
-    SharedPreferencesWithCache prefsWithCache = await SharedPreferencesWithCache.create(
-      cacheOptions: const SharedPreferencesWithCacheOptions(
-        allowList: <String>{'currentUserId','email','userImage','currentCartItems'},
-      ),
-    );
-    setState(() {
-      isLoading = true;
-    });
     try {
+      SharedPreferencesWithCache prefsWithCache =
+          await SharedPreferencesWithCache.create(
+            cacheOptions: const SharedPreferencesWithCacheOptions(
+              allowList: <String>{
+                'currentUserId',
+                'email',
+                'userImage',
+                'currentCartItems',
+              },
+            ),
+          );
+
       final db = await openDatabase(
         join(await getDatabasesPath(), 'pureshopping.db'),
         version: 1,
@@ -47,15 +50,25 @@ class _LoginScreenState extends State<LoginScreen> {
         print(
           'is the password equal to $password : ${user.firstWhere((user) => user['email'] == email)['password'] == password}',
         );
-        final loggedInUser =
-            user.firstWhere((user) => user['email'] == email);
+        final loggedInUser = user.firstWhere((user) => user['email'] == email);
         print('logged in user ${loggedInUser.toString()}');
-        await prefsWithCache.setString('currentUserId', loggedInUser['id'].toString());
-        await prefsWithCache.setString('email', loggedInUser['email'].toString());
-        await prefsWithCache.setString('userImage', loggedInUser['userImage'].toString());
+        await prefsWithCache.setString(
+          'currentUserId',
+          loggedInUser['id'].toString(),
+        );
+        await prefsWithCache.setString(
+          'email',
+          loggedInUser['email'].toString(),
+        );
+        await prefsWithCache.setString(
+          'userImage',
+          loggedInUser['userImage'].toString(),
+        );
         print('current user id: ${prefsWithCache.getString('currentUserId')}');
         print('current user email: ${prefsWithCache.getString('email')}');
-        print('current user userImage: ${prefsWithCache.getString('userImage')}');
+        print(
+          'current user userImage: ${prefsWithCache.getString('userImage')}',
+        );
         print('login successful');
         if (context.mounted) {
           ScaffoldMessenger.of(
@@ -99,15 +112,12 @@ class _LoginScreenState extends State<LoginScreen> {
         ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
-    setState(() {
-      isLoading = false;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-            body:isLoading?Center(child: CircularProgressIndicator(),): Padding(
+      body: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32.0),
               child: Form(
                 key: formKey,
@@ -177,7 +187,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: ElevatedButton(
                         onPressed: () {
-                          formKey.currentState!.validate();
                           if (formKey.currentState!.validate()) {
                             login(email.text, password.text, context);
                           }
@@ -204,6 +213,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-          );
+    );
   }
 }

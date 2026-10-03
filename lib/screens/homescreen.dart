@@ -230,19 +230,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
                   child: SearchAnchor(
                     searchController: searchController,
-                    viewOnChanged: (text) {
-                      if (text.isEmpty) {
+                    viewOnChanged: (_) {
+                      if (searchController.text.isEmpty) {
                         setState(() {
                           productsSuper = fetchProducts();
                         });
                       }
                     },
-                    viewTrailing: [IconButton(onPressed: (){
-                      setState(() {
-                        productsSuper =fetchProducts();
-                      });
-                      searchController.clear();
-                    }, icon: Icon(Icons.clear))],
+                    viewTrailing: [
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            productsSuper = fetchProducts();
+                          });
+                          searchController.clear();
+                        },
+                        icon: Icon(Icons.clear),
+                      ),
+                    ],
                     builder: (context, controller) {
                       return SearchBar(
                         controller: controller,
@@ -252,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         onTap: () {
                           controller.openView();
                         },
-                        onChanged: (text) {
+                        onChanged: (_) {
                           controller.openView();
                         },
                         leading: const Icon(Icons.search),
@@ -268,29 +273,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           )
                           .toList();
-                      if(keyword.isEmpty){
-                        return filteredList.map((product) {
-                          return ListTile(
-                            title: Text(product.productName),
-                            onTap: () async{
-                              setState(() {
-                                productsSuper = Future.value(
-                                    [product]
-                                );
-                              });
-                              controller.closeView(product.productName);
-                            },
-                          );
-                        }).toList();
-                      }
                       return filteredList.map((product) {
                         return ListTile(
                           title: Text(product.productName),
-                          onTap: () async{
+                          onTap: () async {
                             setState(() {
-                              productsSuper = Future.value(
-                               [product]
-                              );
+                              productsSuper = Future.value([product]);
                             });
                             controller.closeView(product.productName);
                           },
@@ -298,6 +286,32 @@ class _HomeScreenState extends State<HomeScreen> {
                       }).toList();
                     },
                   ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.filter_list),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxHeight: 50,
+                        maxWidth: 350,
+                      ),
+                      child: CarouselView.weighted(
+                        flexWeights: [1, 1, 1],
+                        consumeMaxWeight: false,
+                        children: snapshot.data!
+                            .map((prod) => prod.productType)
+                            .toSet()
+                            .map((product) {
+                              return FilterChip.elevated(
+                                label: Text(product),
+                                onSelected: (_) {},
+                              );
+                            })
+                            .toList(),
+                      ),
+                    ),
+                  ],
                 ),
                 Expanded(
                   child: GridView.builder(
