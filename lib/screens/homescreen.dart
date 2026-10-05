@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
 import 'package:pureshopping/models/cartitem.dart';
@@ -46,8 +47,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<List<Product>> fetchProducts() async {
+    String sql =
+        'CREATE TABLE IF NOT EXISTS product(productID TEXT PRIMARY KEY, productName TEXT, productImage TEXT, price REAL, quantity INTEGER, productType TEXT, dateOfManufacture TEXT, expiryDate TEXT, discountAllowed INTEGER)';
     final database = await openDatabase(
       join(await getDatabasesPath(), 'pureshopping.db'),
+      onCreate: (db, version) {
+        return db.execute(sql);
+      },
       version: 1,
     );
     Product product = Product(
@@ -209,7 +215,11 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.only(right: 48.0),
             child: userImage.isEmpty
                 ? CircleAvatar()
-                : CircleAvatar(backgroundImage: FileImage(File(userImage))),
+                : CircleAvatar(
+                    backgroundImage: kIsWeb
+                        ? NetworkImage(userImage)
+                        : FileImage(File(userImage)),
+                  ),
           ),
         ],
       ),
