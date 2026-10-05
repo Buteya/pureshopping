@@ -239,7 +239,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                           (user) => user.email != email.text,
                                         )
                                         .email !=
-                                    email.text) {
+                                    email.text || users.isEmpty) {
                                   newUser.insertUser(newUser);
                                   print(
                                     'user ${email.text} added successfully',
