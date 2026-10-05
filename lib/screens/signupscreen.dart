@@ -230,22 +230,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                   isLoading = true;
                                 });
                                 final users = await newUser.users();
-                                if(users.isEmpty){
-                                  await newUser.insertUser(newUser);
-                                  print(
-                                    'user ${email.text} added successfully',
-                                  );
-                                }
-                                print('all users: ${await newUser.users()}');
-                                print(
-                                  'user does not exist: ${users.firstWhere((user) => user.email != email.text).email != email.text}',
-                                );
-                                if (users
-                                        .firstWhere(
-                                          (user) => user.email != email.text,
-                                        )
-                                        .email !=
-                                    email.text) {
+                                if (users.isEmpty) {
                                   await newUser.insertUser(newUser);
                                   print(
                                     'user ${email.text} added successfully',
@@ -258,21 +243,51 @@ class _SignupScreenState extends State<SignupScreen> {
                                         ),
                                       ),
                                     );
-                                    Navigator.pushNamed(
-                                      context,
-                                      '/LoginScreen',
-                                    );
                                   }
+                                  print('all users: ${await newUser.users()}');
                                 } else {
-                                  print('user ${email.text} already exist');
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'user ${email.text} already  exists',
-                                        ),
-                                      ),
+                                  print('all users: ${await newUser.users()}');
+                                  print(
+                                    'user does not exist: ${users.firstWhere((user) => user.email != email.text).email != email.text}',
+                                  );
+                                  if (users
+                                          .firstWhere(
+                                            (user) => user.email != email.text,
+                                          )
+                                          .email !=
+                                      email.text) {
+                                    await newUser.insertUser(newUser);
+                                    print(
+                                      'user ${email.text} added successfully',
                                     );
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'user ${email.text} added successfully',
+                                          ),
+                                        ),
+                                      );
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/LoginScreen',
+                                      );
+                                    }
+                                  } else {
+                                    print('user ${email.text} already exist');
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'user ${email.text} already  exists',
+                                          ),
+                                        ),
+                                      );
+                                    }
                                   }
                                 }
                               } catch (e) {
