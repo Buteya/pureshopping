@@ -243,6 +243,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                         ),
                                       ),
                                     );
+                                    Navigator.pushNamed(context, '/LoginScreen');
                                   }
                                   print('all users: ${await newUser.users()}');
                                 } else {
