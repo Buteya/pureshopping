@@ -216,9 +216,8 @@ class _SignupScreenState extends State<SignupScreen> {
                         padding: const EdgeInsets.only(top: 16.0),
                         child: ElevatedButton.icon(
                           onPressed: () async {
-                            formKey.currentState!.validate();
                             if (formKey.currentState!.validate() == true) {
-                              final user = User(
+                              final newUser = User(
                                 id: userId,
                                 firstname: firstname.text,
                                 lastname: lastname.text,
@@ -230,18 +229,18 @@ class _SignupScreenState extends State<SignupScreen> {
                                 setState(() {
                                   isLoading = true;
                                 });
-                                final users = await user.users();
-                                print('all users: ${await user.users()}');
+                                final users = await newUser.users();
+                                print('all users: ${await newUser.users()}');
                                 print(
-                                  'user does not exist: ${users.firstWhere((user) => user.email == email.text).email != email.text}',
+                                  'user does not exist: ${users.firstWhere((user) => user.email != email.text).email != email.text}',
                                 );
                                 if (users
                                         .firstWhere(
-                                          (user) => user.email == email.text,
+                                          (user) => user.email != email.text,
                                         )
                                         .email !=
                                     email.text) {
-                                  user.insertUser(user);
+                                  newUser.insertUser(newUser);
                                   print(
                                     'user ${email.text} added successfully',
                                   );
@@ -278,7 +277,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                 }
                               }
 
-                              print('list of all users: ${await user.users()}');
+                              print(
+                                'list of all users: ${await newUser.users()}',
+                              );
                             }
                             setState(() {
                               isLoading = false;
