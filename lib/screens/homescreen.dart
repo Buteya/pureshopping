@@ -51,8 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
         'CREATE TABLE IF NOT EXISTS product(productID TEXT PRIMARY KEY, productName TEXT, productImage TEXT, price REAL, quantity INTEGER, productType TEXT, dateOfManufacture TEXT, expiryDate TEXT, discountAllowed INTEGER)';
     final database = await openDatabase(
       join(await getDatabasesPath(), 'pureshopping.db'),
-      onCreate: (db, version) {
-        return db.execute(sql);
+      onOpen: (db) async{
+        await db.execute(sql);
       },
       version: 1,
     );
