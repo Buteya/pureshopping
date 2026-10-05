@@ -232,7 +232,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 final users = await newUser.users();
                                 print('all users: ${await newUser.users()}');
                                 print(
-                                  'user does not exist: ${users.firstWhere((user) => user.email != email.text).email != email.text}',
+                                  'user does not exist: ${users.isEmpty ?users.isEmpty:users.firstWhere((user) => user.email != email.text).email != email.text}',
                                 );
                                 if (users
                                         .firstWhere(
