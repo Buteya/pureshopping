@@ -117,7 +117,10 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                                   ),
                                   TextButton.icon(
                                     onPressed: () {
-                                      Navigator.pushNamed(context, '/HomeScreen');
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/HomeScreen',
+                                      );
                                     },
                                     label: Text('add items'),
                                     icon: Icon(Icons.add_shopping_cart_rounded),
@@ -644,7 +647,22 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                                 child: Text('delete cart'),
                               ),
                               ElevatedButton(
-                                onPressed: () {},
+                                onPressed: () {
+                                  if (cartItems.isEmpty) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          duration: Duration(seconds: 1),
+                                          content: Text(
+                                            'no items to checkout ',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
                                 child: Text('checkout ${cartItems.length}'),
                               ),
                             ],
