@@ -240,7 +240,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                         )
                                         .email !=
                                     email.text || users.isEmpty) {
-                                  newUser.insertUser(newUser);
+                                  await newUser.insertUser(newUser);
                                   print(
                                     'user ${email.text} added successfully',
                                   );
