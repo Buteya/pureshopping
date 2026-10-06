@@ -4,6 +4,7 @@ import 'package:pureshopping/screens/createproductscreen.dart';
 import 'package:pureshopping/screens/forgotpasswordscreen.dart';
 import 'package:pureshopping/screens/homescreen.dart';
 import 'package:pureshopping/screens/loginscreen.dart';
+import 'package:pureshopping/screens/orderscreen.dart';
 import 'package:pureshopping/screens/productdashboardscreen.dart';
 import 'package:pureshopping/screens/signupscreen.dart';
 import 'package:pureshopping/screens/viewcartscreen.dart';
@@ -40,6 +41,7 @@ class MyApp extends StatelessWidget {
         '/HomeScreen' : (context) => HomeScreen(),
         '/ViewCartScreen' : (context) => ViewCartScreen(),
         '/ViewSingleProductScreen' : (context) => ViewSingleProductScreen(),
+        '/OrderScreen' : (context) => OrderScreen(),
       },
       title: 'pureshopping',
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
