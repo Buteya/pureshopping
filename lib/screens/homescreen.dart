@@ -47,8 +47,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<List<Product>> fetchProducts() async {
-    String sql =
-        'CREATE TABLE IF NOT EXISTS product(productID TEXT PRIMARY KEY, productName TEXT, productImage TEXT, price REAL, quantity INTEGER, productType TEXT, dateOfManufacture TEXT, expiryDate TEXT, discountAllowed INTEGER)';
     final database = await openDatabase(
       join(await getDatabasesPath(), 'pureshopping.db'),
       version: 1,
@@ -234,7 +232,10 @@ class _HomeScreenState extends State<HomeScreen> {
             return Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 32.0,
+                  ),
                   child: SearchAnchor(
                     searchController: searchController,
                     viewOnChanged: (_) {
@@ -320,70 +321,84 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                Expanded(
-                  child: GridView.builder(
-                    itemCount: items!.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      childAspectRatio: 4 / 3,
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 8.0,
-                      mainAxisSpacing: 8.0,
-                    ),
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32.0,
-                          vertical: 8.0,
+                snapshot.data!.isEmpty
+                    ? Center(
+                        child: Column(
+                          children: [
+                            Icon(Icons.inventory_2_outlined, size: 300),
+                            Text('no products')
+                          ],
                         ),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12.0),
-                          onTap: () {
-                            Navigator.pushNamed(
-                              context,
-                              '/ViewSingleProductScreen',
-                              arguments: items[index].productID,
+                      )
+                    : Expanded(
+                        child: GridView.builder(
+                          itemCount: items!.length,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                childAspectRatio: 4 / 3,
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 8.0,
+                                mainAxisSpacing: 8.0,
+                              ),
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 32.0,
+                                vertical: 8.0,
+                              ),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12.0),
+                                onTap: () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/ViewSingleProductScreen',
+                                    arguments: items[index].productID,
+                                  );
+                                },
+                                child: Card(
+                                  clipBehavior: Clip.hardEdge,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Expanded(
+                                        child: Image.file(
+                                          File(items[index].productImage),
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                      Text(items[index].productType),
+                                      Text(items[index].productName),
+                                      Text(
+                                        'KSH ${items[index].price.toString()}',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 16.0,
+                                        ),
+                                        child: ElevatedButton.icon(
+                                          onPressed: () {
+                                            addToCart(
+                                              userID,
+                                              items[index].productID,
+                                              context,
+                                            );
+                                          },
+                                          label: Text('add to cart'),
+                                          icon: Icon(Icons.add_shopping_cart),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             );
                           },
-                          child: Card(
-                            clipBehavior: Clip.hardEdge,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Expanded(
-                                  child: Image.file(
-                                    File(items[index].productImage),
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                Text(items[index].productType),
-                                Text(items[index].productName),
-                                Text(
-                                  'KSH ${items[index].price.toString()}',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(bottom: 16.0),
-                                  child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      addToCart(
-                                        userID,
-                                        items[index].productID,
-                                        context,
-                                      );
-                                    },
-                                    label: Text('add to cart'),
-                                    icon: Icon(Icons.add_shopping_cart),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
                         ),
-                      );
-                    },
-                  ),
-                ),
+                      ),
               ],
             );
           }

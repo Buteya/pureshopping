@@ -307,9 +307,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                           );
                           database = await openDatabase(
                             join(await getDatabasesPath(), 'pureshopping.db'),
-                            onCreate: (db, version) {
-                              return db.execute(sql);
-                            },
                             version: 1,
                           );
                           // database!.execute('DROP TABLE product');
