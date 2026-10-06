@@ -101,33 +101,9 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                   ),
                   groupedCartItems.isEmpty
                       ? Center(
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12.0),
-                            onTap: () {
-                              Navigator.pushNamed(context, '/HomeScreen');
-                            },
-                            child: Card(
-                              clipBehavior: Clip.hardEdge,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  ConstrainedBox(
-                                    constraints: BoxConstraints(maxHeight: 350),
-                                    child: Image.asset('assets/empty cart.png'),
-                                  ),
-                                  TextButton.icon(
-                                    onPressed: () {
-                                      Navigator.pushNamed(
-                                        context,
-                                        '/HomeScreen',
-                                      );
-                                    },
-                                    label: Text('add items'),
-                                    icon: Icon(Icons.add_shopping_cart_rounded),
-                                  ),
-                                ],
-                              ),
-                            ),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(maxHeight: 300),
+                            child: Image.asset('assets/new empty cart.png'),
                           ),
                         )
                       : Expanded(

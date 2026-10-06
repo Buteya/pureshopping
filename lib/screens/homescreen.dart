@@ -325,8 +325,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     ? Center(
                         child: Column(
                           children: [
-                            Image.asset('assets/empty box.png',fit: BoxFit.contain,),
-                            Text('no products')
+                            ConstrainedBox(
+                              constraints: BoxConstraints(maxHeight: 300),
+                              child: Image.asset(
+                                'assets/empty box.png',
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            Text('no products'),
                           ],
                         ),
                       )
