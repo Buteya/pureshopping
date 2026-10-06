@@ -100,10 +100,12 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                     ),
                   ),
                   groupedCartItems.isEmpty
-                      ? Center(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(maxHeight: 300),
-                            child: Image.asset('assets/new empty cart.png'),
+                      ? Expanded(
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(maxHeight: 300),
+                              child: Image.asset('assets/new empty cart.png'),
+                            ),
                           ),
                         )
                       : Expanded(
@@ -518,128 +520,134 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              ElevatedButton(
-                                onPressed: () async {
-                                  if (cartItems.isNotEmpty) {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) {
-                                        return AlertDialog(
-                                          title: const Text('remove cart'),
-                                          content: const Text(
-                                            'are you sure you want to remove all the products?',
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                              },
-                                              child: Text('cancel'),
+                              Padding(
+                                padding: const EdgeInsets.only(right: 16.0),
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    if (cartItems.isNotEmpty) {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            title: const Text('remove cart'),
+                                            content: const Text(
+                                              'are you sure you want to remove all the products?',
                                             ),
-                                            TextButton(
-                                              onPressed: () async {
-                                                try {
-                                                  final db = await openDatabase(
-                                                    join(
-                                                      await getDatabasesPath(),
-                                                      'pureshopping.db',
-                                                    ),
-                                                    version: 1,
-                                                  );
-                                                  if (cartItems.isNotEmpty) {
-                                                    await db.delete('cartItem');
-                                                    setState(() {
-                                                      cartItemsSuper =
-                                                          fetchCartItems();
-                                                    });
-                                                    if (context.mounted) {
-                                                      ScaffoldMessenger.of(
-                                                        context,
-                                                      ).showSnackBar(
-                                                        SnackBar(
-                                                          duration: Duration(
-                                                            seconds: 1,
-                                                          ),
-                                                          content: Text(
-                                                            'all products have been removed',
-                                                          ),
-                                                        ),
-                                                      );
-                                                    }
-                                                  } else {
-                                                    if (context.mounted) {
-                                                      ScaffoldMessenger.of(
-                                                        context,
-                                                      ).showSnackBar(
-                                                        SnackBar(
-                                                          duration: Duration(
-                                                            seconds: 1,
-                                                          ),
-                                                          content: Text(
-                                                            'no products to remove',
-                                                          ),
-                                                        ),
-                                                      );
-                                                    }
-                                                  }
-
-                                                  if (context.mounted) {
-                                                    Navigator.of(context).pop();
-                                                  }
-                                                } catch (e) {
-                                                  if (context.mounted) {
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          e.toString(),
-                                                        ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop();
+                                                },
+                                                child: Text('cancel'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () async {
+                                                  try {
+                                                    final db = await openDatabase(
+                                                      join(
+                                                        await getDatabasesPath(),
+                                                        'pureshopping.db',
                                                       ),
+                                                      version: 1,
                                                     );
+                                                    if (cartItems.isNotEmpty) {
+                                                      await db.delete('cartItem');
+                                                      setState(() {
+                                                        cartItemsSuper =
+                                                            fetchCartItems();
+                                                      });
+                                                      if (context.mounted) {
+                                                        ScaffoldMessenger.of(
+                                                          context,
+                                                        ).showSnackBar(
+                                                          SnackBar(
+                                                            duration: Duration(
+                                                              seconds: 1,
+                                                            ),
+                                                            content: Text(
+                                                              'all products have been removed',
+                                                            ),
+                                                          ),
+                                                        );
+                                                      }
+                                                    } else {
+                                                      if (context.mounted) {
+                                                        ScaffoldMessenger.of(
+                                                          context,
+                                                        ).showSnackBar(
+                                                          SnackBar(
+                                                            duration: Duration(
+                                                              seconds: 1,
+                                                            ),
+                                                            content: Text(
+                                                              'no products to remove',
+                                                            ),
+                                                          ),
+                                                        );
+                                                      }
+                                                    }
+
+                                                    if (context.mounted) {
+                                                      Navigator.of(context).pop();
+                                                    }
+                                                  } catch (e) {
+                                                    if (context.mounted) {
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text(
+                                                            e.toString(),
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }
                                                   }
-                                                }
-                                              },
-                                              child: Text('confirm'),
+                                                },
+                                                child: Text('confirm'),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    } else {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'no products to be removed',
                                             ),
-                                          ],
+                                          ),
                                         );
-                                      },
-                                    );
-                                  } else {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'no products to be removed',
-                                          ),
-                                        ),
-                                      );
+                                      }
                                     }
-                                  }
-                                },
-                                child: Text('delete cart'),
+                                  },
+                                  child: Text('delete cart'),
+                                ),
                               ),
-                              ElevatedButton(
-                                onPressed: () {
-                                  if (cartItems.isEmpty) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        SnackBar(
-                                          duration: Duration(seconds: 1),
-                                          content: Text(
-                                            'no items to checkout ',
+                              Padding(
+                                padding: const EdgeInsets.only(left: 16.0),
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    if (cartItems.isEmpty) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            duration: Duration(seconds: 1),
+                                            content: Text(
+                                              'no items to checkout ',
+                                            ),
                                           ),
-                                        ),
-                                      );
+                                        );
+                                      }
                                     }
-                                  }
-                                },
-                                child: Text('checkout ${cartItems.length}'),
+                                  },
+                                  child: Text('checkout ${cartItems.length}'),
+                                ),
                               ),
                             ],
                           ),

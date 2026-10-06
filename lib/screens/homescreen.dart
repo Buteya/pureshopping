@@ -323,17 +323,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 snapshot.data!.isEmpty
                     ? Center(
-                        child: Column(
-                          children: [
-                            ConstrainedBox(
-                              constraints: BoxConstraints(maxHeight: 300),
-                              child: Image.asset(
-                                'assets/empty box.png',
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                            Text('no products'),
-                          ],
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxHeight: 300),
+                          child: Image.asset(
+                            'assets/empty box.png',
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       )
                     : Expanded(
