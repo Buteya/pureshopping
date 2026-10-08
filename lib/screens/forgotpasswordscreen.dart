@@ -72,7 +72,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         print(
           'all users with email $email: ${await db.query('users', where: 'email = ?', whereArgs: [email])}',
         );
-        if(context.mounted){
+        if (context.mounted) {
           Navigator.pushNamed(context, '/LoginScreen');
         }
       } else {
@@ -100,128 +100,150 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body:isLoading?Center(child: CircularProgressIndicator(),): Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32.0),
-        child: Form(
-          key: formKey,
-          child: Column(
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : Stack(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'forgot password',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.w700),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: TextFormField(
-                  controller: email,
-                  decoration: InputDecoration(labelText: "email"),
-                  // The validator receives the text that the user has entered.
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a email';
-                    }
-                    if (!value.contains("@")) {
-                      return 'please enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: TextFormField(
-                  obscureText: isTextObscure,
-                  controller: password,
-                  decoration: InputDecoration(
-                    labelText: "password",
-                    suffixIcon: IconButton(
-                      onPressed: () {
-                        setState(() {
-                          isTextObscure = !isTextObscure;
-                        });
-                      },
-                      icon: Icon(Icons.remove_red_eye_rounded),
-                    ),
-                  ),
-                  // The validator receives the text that the user has entered.
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a password';
-                    }
-                    if (!value.contains(
-                      RegExp(
-                        r'^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$',
+              Center(child: ConstrainedBox(constraints:BoxConstraints(maxWidth: 400,maxHeight: 400),child: Image.asset('assets/pureshopping logo.png'))),
+              Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: 400, maxHeight: 400),
+                  child: Card(
+                    color: Colors.white70,
+                    child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                        child: Form(
+                          key: formKey,
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Text(
+                                  'forgot password',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 32.0,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: TextFormField(
+                                  controller: email,
+                                  decoration: InputDecoration(labelText: "email"),
+                                  // The validator receives the text that the user has entered.
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter a email';
+                                    }
+                                    if (!value.contains("@")) {
+                                      return 'please enter a valid email';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: TextFormField(
+                                  obscureText: isTextObscure,
+                                  controller: password,
+                                  decoration: InputDecoration(
+                                    labelText: "password",
+                                    suffixIcon: IconButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          isTextObscure = !isTextObscure;
+                                        });
+                                      },
+                                      icon: Icon(Icons.remove_red_eye_rounded),
+                                    ),
+                                  ),
+                                  // The validator receives the text that the user has entered.
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter a password';
+                                    }
+                                    if (!value.contains(
+                                      RegExp(
+                                        r'^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$',
+                                      ),
+                                    )) {
+                                      return 'password should contain at least one of these A-a 0-9 @ \$ ! % * ? &';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: TextFormField(
+                                  obscureText: isTextObscure1,
+                                  controller: confirmPassword,
+                                  decoration: InputDecoration(
+                                    labelText: "confirm password",
+                                    suffixIcon: IconButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          isTextObscure1 = !isTextObscure1;
+                                        });
+                                      },
+                                      icon: Icon(Icons.remove_red_eye_rounded),
+                                    ),
+                                  ),
+                                  // The validator receives the text that the user has entered.
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter a confirm password';
+                                    }
+                                    if (value != password.text) {
+                                      return 'passwords should match';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    formKey.currentState!.validate();
+                                    if (formKey.currentState!.validate()) {
+                                      setState(() {
+                                        isLoading = true;
+                                      });
+                                      updatePassword(
+                                        email.text,
+                                        confirmPassword.text,
+                                        context,
+                                      );
+                                    }
+                                    setState(() {
+                                      isLoading = false;
+                                    });
+                                  },
+                                  child: Text('update'),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.pushNamed(context, '/LoginScreen');
+                                  },
+                                  child: Text('login'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    )) {
-                      return 'password should contain at least one of these A-a 0-9 @ \$ ! % * ? &';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: TextFormField(
-                  obscureText: isTextObscure1,
-                  controller: confirmPassword,
-                  decoration: InputDecoration(
-                    labelText: "confirm password",
-                    suffixIcon: IconButton(
-                      onPressed: () {
-                        setState(() {
-                          isTextObscure1 = !isTextObscure1;
-                        });
-                      },
-                      icon: Icon(Icons.remove_red_eye_rounded),
-                    ),
                   ),
-                  // The validator receives the text that the user has entered.
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a confirm password';
-                    }
-                    if (value != password.text) {
-                      return 'passwords should match';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: ElevatedButton(
-                  onPressed: () {
-                    formKey.currentState!.validate();
-                    if (formKey.currentState!.validate()) {
-                      setState(() {
-                        isLoading = true;
-                      });
-                      updatePassword(email.text, confirmPassword.text, context);
-                    }
-                    setState(() {
-                      isLoading = false;
-                    });
-                  },
-                  child: Text('update'),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/LoginScreen');
-                  },
-                  child: Text('login'),
                 ),
               ),
             ],
           ),
-        ),
-      ),
     );
   }
 }

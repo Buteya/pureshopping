@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
+import 'package:pureshopping/models/order.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:collection/collection.dart';
 import 'package:uuid/uuid.dart';
@@ -551,7 +553,9 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                                                       version: 1,
                                                     );
                                                     if (cartItems.isNotEmpty) {
-                                                      await db.delete('cartItem');
+                                                      await db.delete(
+                                                        'cartItem',
+                                                      );
                                                       setState(() {
                                                         cartItemsSuper =
                                                             fetchCartItems();
@@ -588,7 +592,9 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                                                     }
 
                                                     if (context.mounted) {
-                                                      Navigator.of(context).pop();
+                                                      Navigator.of(
+                                                        context,
+                                                      ).pop();
                                                     }
                                                   } catch (e) {
                                                     if (context.mounted) {
@@ -630,7 +636,7 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(left: 16.0),
                                 child: ElevatedButton(
-                                  onPressed: () {
+                                  onPressed: () async {
                                     if (cartItems.isEmpty) {
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(
@@ -643,6 +649,76 @@ class _ViewCartScreenState extends State<ViewCartScreen> {
                                             ),
                                           ),
                                         );
+                                      }
+                                    } else {
+                                      try {
+                                        final total =
+                                            List.generate(
+                                              (products
+                                                      .where(
+                                                        (prod) => cartItems
+                                                            .map(
+                                                              (cart) => cart
+                                                                  .productId,
+                                                            )
+                                                            .contains(
+                                                              prod.productID,
+                                                            ),
+                                                      )
+                                                      .toList()
+                                                      .map((item) => item.price)
+                                                      .toList())
+                                                  .length,
+                                              (i) =>
+                                                  (products
+                                                      .where(
+                                                        (prod) => cartItems
+                                                            .map(
+                                                              (cart) => cart
+                                                                  .productId,
+                                                            )
+                                                            .contains(
+                                                              prod.productID,
+                                                            ),
+                                                      )
+                                                      .toList()
+                                                      .map((item) => item.price)
+                                                      .toList())[i] *
+                                                  groupedCartItems.values
+                                                      .map(
+                                                        (list) => list.length,
+                                                      )
+                                                      .toList()[i],
+                                            ).fold(
+                                              0.00,
+                                              (initialValue, sum) =>
+                                                  initialValue + sum,
+                                            );
+                                        final cartItemIds = cartItems.map((item)=>item.id).toList();
+                                        final newOrder = Order(
+                                          id: Uuid().v8(),
+                                          cartItemId: jsonEncode(cartItemIds),
+                                          total: total,
+                                          discountAllowed: 0,
+                                          discountAmount: 0.0,
+                                          paid: 0,
+                                          orderedOn: DateTime.now().toString(),
+                                        );
+                                        await newOrder.insertOrder(newOrder);
+                                        print('all orders: ${await newOrder.orders()}');
+                                        if(context.mounted){
+                                          Navigator.pushNamed(context, '/OrderScreen');
+                                        }
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(e.toString()),
+                                            ),
+                                          );
+                                        }
                                       }
                                     }
                                   },
