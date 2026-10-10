@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
 import '../models/order.dart';
 
@@ -11,11 +15,12 @@ class OrderScreen extends StatefulWidget {
 
 class _OrderScreenState extends State<OrderScreen> {
   late final Future<List<Order>> ordersSuper;
+  late final Future<Map<String,Object?>> latestOrder;
 
   @override
   void initState() {
     super.initState();
-    ordersSuper = fetchOrders();
+    latestOrder = getLastCheckedOutOrder();
   }
 
   Future<List<Order>> fetchOrders() async {
@@ -31,11 +36,28 @@ class _OrderScreenState extends State<OrderScreen> {
     return await order.orders();
   }
 
+  Future<Map<String, Object?>> getLastCheckedOutOrder() async {
+    final db = await openDatabase(
+      join(await getDatabasesPath(), 'pureshopping.db'),
+      version: 1,
+    );
+
+    final List<Map<String, Object?>> results = await db.query(
+      'orders',
+      orderBy: 'orderedOn DESC',
+      limit: 1,
+    );
+    if (results.isNotEmpty) {
+      return results.first;
+    }
+    return {};
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: FutureBuilder(
-        future: ordersSuper,
+        future: latestOrder,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -44,6 +66,7 @@ class _OrderScreenState extends State<OrderScreen> {
             return Center(child: Text(snapshot.error.toString()));
           }
           if (snapshot.hasData) {
+            print('length of the latest order ${snapshot.data!.length}');
             return ListView.builder(
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
@@ -53,17 +76,17 @@ class _OrderScreenState extends State<OrderScreen> {
                     ListTile(
                       title: Text('items'),
                       trailing: Text(
-                        snapshot.data![index].cartItemId.length.toString(),
+                        jsonDecode(snapshot.data!['cartItemId'].toString()).length.toString(),
                       ),
                     ),
                     ListTile(
-                      title: Text('total'),
-                      trailing: Text(snapshot.data![index].total.toString()),
+                      title: Text('items total'),
+                      trailing: Text('KSH ${snapshot.data!['total'].toString()}'),
                     ),
                     ListTile(
                       title: Text('discount allowed'),
                       trailing: Text(
-                        snapshot.data![index].discountAllowed == 0
+                        snapshot.data!['discountAllowed'] == 0
                             ? 'none'
                             : 'yes',
                       ),
@@ -71,7 +94,25 @@ class _OrderScreenState extends State<OrderScreen> {
                     ListTile(
                       title: Text('discount amount'),
                       trailing: Text(
-                        snapshot.data![index].discountAmount.toString(),
+                        'KSH ${snapshot.data!['discountAmount'].toString()}',
+                      ),
+                    ),
+                    ListTile(
+                      title: Text('vat @ 17%'),
+                      trailing: Text(
+                        'KSH ${snapshot.data!['discountAmount'].toString()}',
+                      ),
+                    ),
+                    ListTile(
+                      title: Text('delivery fee'),
+                      trailing: Text(
+                        'KSH ${snapshot.data!['discountAmount'].toString()}',
+                      ),
+                    ),
+                    ListTile(
+                      title: Text('total'),
+                      trailing: Text(
+                        'KSH ${snapshot.data!['discountAmount'].toString()}',
                       ),
                     ),
                   ],
